@@ -1,4 +1,4 @@
-﻿namespace SatReportAI.Services
+﻿namespace SatReportAI.Services.IA
 {
     public interface ILLMService
     {

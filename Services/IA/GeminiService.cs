@@ -1,4 +1,4 @@
-﻿using SatReportAI.Services;
+﻿using SatReportAI.Services.IA;
 using System.Text;
 using System.Text.Json;
 

@@ -1,4 +1,6 @@
-using SatReportAI.Services;
+using MongoDB.Driver;
+using SatReportAI.Services.IA;
+using SatReportAI.Services.MongoDB;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +20,23 @@ builder.Services.AddScoped<ILLMService>(sp =>
         _ => throw new NotImplementedException("Proveedor no soportado")
     };
 });
+
+builder.Services.AddSingleton<IMongoClient>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var connectionString = config["AppSettings:Mongo:ConnectionString"];
+    return new MongoClient(connectionString);
+});
+
+builder.Services.AddSingleton(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var client = sp.GetRequiredService<IMongoClient>();
+    var databaseName = config["AppSettings:Mongo:Database"];
+    return client.GetDatabase(databaseName);
+});
+
+builder.Services.AddScoped<IMongoQueryService, MongoQueryService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

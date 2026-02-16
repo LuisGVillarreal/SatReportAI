@@ -25,10 +25,12 @@ REGLAS OBLIGATORIAS:
    { "error": "Debe especificar las columnas a retornar" }
 5. Si alguna columna no existe en el catálogo → responder:
    { "error": "Columna no válida: NOMBRE_COLUMNA" }
+6. Las fechas deben generarse en formato MongoDB Extended JSON usando "$date".
+7. Nunca devolver fechas como string simple.
 
 FORMATO DE RESPUESTA OBLIGATORIO:
 {
-  "collection": "cfdi",
+  "collection": "AUD_MetaData",
   "filter": { },
   "projection": { },
   "sort": { "FechaEmision": -1 }
@@ -40,10 +42,10 @@ Reglas de negocio:
 - Factura → TipoComprobante = "I"
 - Pago → TipoComprobante = "P"
 - Nota de crédito → TipoComprobante = "E"
-- Rango de fechas usar:
+- Rango de fechas usar formato ISODate extendido de MongoDB:
   "FechaEmision": {
-      "$gte": "yyyy-MM-dd",
-      "$lte": "yyyy-MM-dd"
+      "$gte": { "$date": "yyyy-MM-ddT00:00:00.000Z" },
+      "$lte": { "$date": "yyyy-MM-ddT23:59:59.999Z" }
   }
 
 IMPORTANTE:
