@@ -1,7 +1,6 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Driver;
 using SatReportAI.Models;
-using System.Text.Json;
 
 namespace SatReportAI.Services.MongoDB
 {
@@ -14,7 +13,10 @@ namespace SatReportAI.Services.MongoDB
             _database = database;
         }
 
-        public async Task<string> ExecuteAsync(MongoQueryDefinition query)
+        public async Task<(List<object> Data, long TotalRecords)> ExecuteAsync(
+            MongoQueryDefinition query,
+            int page,
+            int pageSize)
         {
             if (string.IsNullOrWhiteSpace(query.Collection))
                 throw new Exception("Collection inválida");
@@ -25,18 +27,15 @@ namespace SatReportAI.Services.MongoDB
             var collection = _database.GetCollection<BsonDocument>(query.Collection);
 
             var builder = Builders<BsonDocument>.Filter;
+
             var filters = new List<FilterDefinition<BsonDocument>>
             {
-                builder.Eq("RfcOwner", query.RfcOwner) // Filtro obligatorio primero
+                builder.Eq("RfcOwner", query.RfcOwner)
             };
 
             if (query.Filter != null)
             {
-                var filterDoc = BsonDocument.Parse(
-                    JsonSerializer.Serialize(query.Filter)
-                );
-
-                filters.Add(new BsonDocumentFilterDefinition<BsonDocument>(filterDoc));
+                filters.Add(new BsonDocumentFilterDefinition<BsonDocument>(query.Filter));
             }
 
             var finalFilter = builder.And(filters);
@@ -45,25 +44,26 @@ namespace SatReportAI.Services.MongoDB
 
             if (query.Projection != null)
             {
-                var projectionDoc = BsonDocument.Parse(
-                    JsonSerializer.Serialize(query.Projection)
-                );
-
-                find = find.Project<BsonDocument>(projectionDoc);
+                find = find.Project<BsonDocument>(query.Projection);
             }
 
             if (query.Sort != null)
             {
-                var sortDoc = BsonDocument.Parse(
-                    JsonSerializer.Serialize(query.Sort)
-                );
-
-                find = find.Sort(sortDoc);
+                find = find.Sort(query.Sort);
             }
 
-            var result = await find.ToListAsync();
+            var totalRecords = await collection.CountDocumentsAsync(finalFilter);
 
-            return result.ToJson();
+            var list = await find
+                .Skip((page - 1) * pageSize)
+                .Limit(pageSize)
+                .ToListAsync();
+
+            var result = list
+            .Select(x => BsonTypeMapper.MapToDotNetValue(x))
+            .ToList();
+
+            return (result, totalRecords);
         }
     }
 }

@@ -1,9 +1,10 @@
-﻿using SatReportAI.Models;
+﻿using MongoDB.Bson;
+using SatReportAI.Models;
 
 namespace SatReportAI.Services.MongoDB
 {
     public interface IMongoQueryService
     {
-        Task<string> ExecuteAsync(MongoQueryDefinition query);
+        Task<(List<object> Data, long TotalRecords)> ExecuteAsync(MongoQueryDefinition query, int page, int pageSize);
     }
 }
